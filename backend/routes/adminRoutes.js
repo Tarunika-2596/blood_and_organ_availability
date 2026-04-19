@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const adminController = require('../controllers/adminControllerMock');
+const adminController = require('../controllers/adminController');
 const { auth, authorize } = require('../middleware/auth');
 
 router.get('/hospitals', auth, authorize('admin'), adminController.getHospitals);

@@ -9,12 +9,14 @@ const AdminDashboard = () => {
   const [hospitals, setHospitals] = useState([]);
   const [logs, setLogs] = useState([]);
   const [activeTab, setActiveTab] = useState('hospitals');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadData();
   }, [activeTab]);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       if (activeTab === 'hospitals') {
         const { data } = await getAdminHospitals();
@@ -26,12 +28,13 @@ const AdminDashboard = () => {
     } catch (error) {
       alert('Failed to load data');
     }
+    setLoading(false);
   };
 
   const handleApprove = async (id) => {
     try {
       await approveHospital(id);
-      alert('Hospital approved');
+      alert('Hospital approved successfully');
       loadData();
     } catch (error) {
       alert('Failed to approve');
@@ -39,6 +42,7 @@ const AdminDashboard = () => {
   };
 
   const handleDisable = async (id) => {
+    if (!window.confirm('Are you sure you want to disable this hospital?')) return;
     try {
       await disableHospital(id);
       alert('Hospital disabled');
@@ -56,89 +60,105 @@ const AdminDashboard = () => {
   return (
     <div style={styles.wrapper}>
       <div style={styles.container}>
-        <div style={styles.header}>
-          <div>
-            <h1 style={styles.title}>Admin Dashboard</h1>
-            <p style={styles.subtitle}>Manage hospitals and monitor system activity</p>
+        <div style={styles.header} className="glass-card animate-fade">
+          <div style={styles.headerInfo}>
+            <div style={styles.adminBadge}>System Admin</div>
+            <h1 style={styles.title}>Network Oversight</h1>
+            <p style={styles.subtitle}>Manage medical facilities and audit system updates.</p>
           </div>
-          <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
+          <button onClick={handleLogout} className="btn btn-primary" style={styles.logoutBtn}>Logout Admin</button>
         </div>
 
-        <div style={styles.tabs}>
-          <button
-            onClick={() => setActiveTab('hospitals')}
-            style={{...styles.tab, ...(activeTab === 'hospitals' && styles.activeTab)}}
-          >
-            Hospitals ({hospitals.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('logs')}
-            style={{...styles.tab, ...(activeTab === 'logs' && styles.activeTab)}}
-          >
-            Update Logs ({logs.length})
-          </button>
+        <div style={styles.controls} className="animate-fade">
+          <div style={styles.tabs}>
+            <button
+              onClick={() => setActiveTab('hospitals')}
+              style={{...styles.tab, ...(activeTab === 'hospitals' && styles.activeTab)}}
+            >
+              Registered Hospitals ({hospitals.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('logs')}
+              style={{...styles.tab, ...(activeTab === 'logs' && styles.activeTab)}}
+            >
+              Activity Logs ({logs.length})
+            </button>
+          </div>
+          <button onClick={loadData} className="btn btn-outline" style={styles.refreshBtn}>Refresh Data</button>
         </div>
 
         {activeTab === 'hospitals' ? (
-          <div style={styles.tableCard}>
-            <div style={styles.tableContainer}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Hospital Name</th>
-                    <th style={styles.th}>City</th>
-                    <th style={styles.th}>Contact</th>
-                    <th style={styles.th}>Status</th>
-                    <th style={styles.th}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hospitals.map(hospital => (
-                    <tr key={hospital._id} style={styles.tr}>
-                      <td style={styles.td}>{hospital.name}</td>
-                      <td style={styles.td}>{hospital.city}</td>
-                      <td style={styles.td}>{hospital.contactNumber}</td>
-                      <td style={styles.td}>
+          <div style={styles.tableWrapper} className="white-card animate-fade">
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>FACILITY NAME</th>
+                  <th style={styles.th}>LOCATION</th>
+                  <th style={styles.th}>CONTACT</th>
+                  <th style={styles.th}>STATUS</th>
+                  <th style={styles.th}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hospitals.map(hospital => (
+                  <tr key={hospital.id} style={styles.tr}>
+                    <td style={styles.td}>
+                      <div style={styles.hospitalName}>{hospital.name}</div>
+                      <div style={styles.hospitalAddr}>{hospital.address}</div>
+                    </td>
+                    <td style={styles.td}>{hospital.city}</td>
+                    <td style={styles.td}>{hospital.contactNumber}</td>
+                    <td style={styles.td}>
+                      <div style={styles.statusGroup}>
                         {hospital.isApproved ? (
-                          <span style={styles.approved}>Approved</span>
+                          <span style={styles.approvedLabel}>Verified</span>
                         ) : (
-                          <span style={styles.pending}>Pending</span>
+                          <span style={styles.pendingLabel}>Pending</span>
                         )}
-                        {!hospital.isActive && <span style={styles.disabled}> Disabled</span>}
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.actions}>
-                          {!hospital.isApproved && (
-                            <button onClick={() => handleApprove(hospital._id)} style={styles.approveBtn}>
-                              Approve
-                            </button>
-                          )}
-                          {hospital.isActive && (
-                            <button onClick={() => handleDisable(hospital._id)} style={styles.disableBtn}>
-                              Disable
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        {!hospital.isActive && <span style={styles.disabledLabel}>Inactive</span>}
+                      </div>
+                    </td>
+                    <td style={styles.td}>
+                      <div style={styles.actionButtons}>
+                        {!hospital.isApproved && (
+                          <button onClick={() => handleApprove(hospital.id)} className="btn btn-primary" style={styles.actionBtn}>
+                            Approve
+                          </button>
+                        )}
+                        {hospital.isActive && (
+                          <button onClick={() => handleDisable(hospital.id)} className="btn btn-outline" style={{...styles.actionBtn, color: '#dc2626'}}>
+                            Disable
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
-          <div style={styles.logsContainer}>
+          <div style={styles.logsGrid} className="animate-fade">
             {logs.map((log, idx) => (
-              <div key={idx} style={styles.logCard}>
+              <div key={idx} style={styles.logCard} className="white-card">
                 <div style={styles.logHeader}>
-                  <h3 style={styles.logTitle}>{log.hospitalId?.name}</h3>
-                  <span style={styles.logBadge}>{log.type}</span>
+                  <div>
+                    <h3 style={styles.logHospital}>{log.hospitalName}</h3>
+                    <span style={styles.logTypeBadge}>{log.type} Update</span>
+                  </div>
+                  <div style={styles.logTime}>{new Date(log.timestamp).toLocaleDateString()}</div>
                 </div>
-                <div style={styles.logContent}>
-                  <p><strong>Field:</strong> {log.updatedField}</p>
-                  <p><strong>Change:</strong> "{log.previousValue}" → "{log.newValue}"</p>
+                <div style={styles.logBody}>
+                  <div style={styles.logField}>Modified: <strong>{log.updatedField}</strong></div>
+                  <div style={styles.logChange}>
+                    <span style={styles.oldVal}>{log.previousValue || 'None'}</span>
+                    <span style={styles.arrow}>→</span>
+                    <span style={styles.newVal}>{log.newValue}</span>
+                  </div>
                 </div>
-                <p style={styles.timestamp}>{new Date(log.timestamp).toLocaleString()}</p>
+                <div style={styles.logFooter}>
+                  {new Date(log.timestamp).toLocaleTimeString()}
+                </div>
               </div>
             ))}
           </div>
@@ -149,34 +169,44 @@ const AdminDashboard = () => {
 };
 
 const styles = {
-  wrapper: { minHeight: '100vh', padding: '20px' },
-  container: { maxWidth: '1400px', margin: '0 auto' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px', background: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' },
-  title: { color: '#dc2626', fontSize: '2rem', margin: 0, fontWeight: '700' },
-  subtitle: { color: '#666', marginTop: '5px', fontSize: '1rem' },
-  logoutBtn: { padding: '12px 25px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '1rem' },
-  tabs: { display: 'flex', gap: '15px', marginBottom: '25px', flexWrap: 'wrap' },
-  tab: { padding: '15px 30px', border: '2px solid #fff', background: '#fff', cursor: 'pointer', borderRadius: '8px', fontWeight: '600', fontSize: '1rem', color: '#666' },
-  activeTab: { background: '#dc2626', color: 'white', border: '2px solid #dc2626' },
-  tableCard: { background: '#fff', borderRadius: '12px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', overflowX: 'auto' },
-  tableContainer: { overflowX: 'auto' },
-  table: { width: '100%', borderCollapse: 'collapse', minWidth: '800px' },
-  th: { padding: '15px', textAlign: 'left', borderBottom: '2px solid #e0e0e0', backgroundColor: '#f8f9fa', fontWeight: '600', color: '#333' },
-  tr: { transition: 'background 0.2s' },
-  td: { padding: '15px', borderBottom: '1px solid #e0e0e0' },
-  approved: { padding: '5px 12px', background: '#d4edda', color: '#155724', borderRadius: '20px', fontSize: '0.9rem', fontWeight: '600' },
-  pending: { padding: '5px 12px', background: '#fff3cd', color: '#856404', borderRadius: '20px', fontSize: '0.9rem', fontWeight: '600' },
-  disabled: { padding: '5px 12px', background: '#f8d7da', color: '#721c24', borderRadius: '20px', fontSize: '0.9rem', fontWeight: '600', marginLeft: '5px' },
-  actions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  approveBtn: { padding: '8px 16px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem' },
-  disableBtn: { padding: '8px 16px', background: '#666', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem' },
-  logsContainer: { display: 'grid', gap: '20px', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))' },
-  logCard: { padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' },
-  logHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingBottom: '10px', borderBottom: '2px solid #f0f0f0' },
-  logTitle: { margin: 0, color: '#dc2626', fontSize: '1.1rem', fontWeight: '600' },
-  logBadge: { padding: '5px 12px', background: '#fee', color: '#dc2626', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600' },
-  logContent: { marginBottom: '15px', lineHeight: '1.8', color: '#555' },
-  timestamp: { fontSize: '0.85rem', color: '#999', fontStyle: 'italic' }
+  wrapper: { minHeight: '100vh', padding: '60px 20px' },
+  container: { maxWidth: '1200px', margin: '0 auto' },
+  header: { padding: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' },
+  adminBadge: { display: 'inline-block', background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '4px 12px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', marginBottom: '10px' },
+  title: { fontSize: '2.8rem', fontWeight: '800', margin: 0, letterSpacing: '-1px' },
+  subtitle: { color: '#94a3b8', fontSize: '1.1rem', fontWeight: '300', marginTop: '5px' },
+  logoutBtn: { padding: '16px 32px' },
+  controls: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' },
+  tabs: { display: 'flex', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '6px', borderRadius: '14px' },
+  tab: { padding: '12px 24px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#94a3b8', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' },
+  activeTab: { background: '#fff', color: '#0f172a', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+  refreshBtn: { borderRadius: '10px' },
+  tableWrapper: { padding: '20px', overflowX: 'auto' },
+  table: { width: '100%', borderCollapse: 'collapse', minWidth: '900px' },
+  th: { textAlign: 'left', padding: '16px', fontSize: '0.75rem', fontWeight: '700', color: '#94a3b8', letterSpacing: '1px', borderBottom: '1px solid #f1f5f9' },
+  tr: { borderBottom: '1px solid #f1f5f9' },
+  td: { padding: '20px 16px', color: '#0f172a' },
+  hospitalName: { fontWeight: '700', fontSize: '1.1rem', color: '#0f172a' },
+  hospitalAddr: { fontSize: '0.85rem', color: '#64748b', marginTop: '4px' },
+  statusGroup: { display: 'flex', gap: '8px' },
+  approvedLabel: { background: '#ecfdf5', color: '#059669', padding: '4px 12px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '700' },
+  pendingLabel: { background: '#fffbeb', color: '#d97706', padding: '4px 12px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '700' },
+  disabledLabel: { background: '#fef2f2', color: '#dc2626', padding: '4px 12px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '700' },
+  actionButtons: { display: 'flex', gap: '8px' },
+  actionBtn: { padding: '8px 16px', fontSize: '0.85rem' },
+  logsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '25px' },
+  logCard: { padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px' },
+  logHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
+  logHospital: { fontSize: '1.1rem', fontWeight: '700', margin: 0, color: '#0f172a' },
+  logTypeBadge: { display: 'inline-block', marginTop: '6px', fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', color: '#dc2626' },
+  logTime: { fontSize: '0.85rem', color: '#94a3b8' },
+  logBody: { background: '#f8fafc', padding: '15px', borderRadius: '12px' },
+  logField: { fontSize: '0.9rem', color: '#64748b', marginBottom: '10px' },
+  logChange: { display: 'flex', alignItems: 'center', gap: '12px' },
+  oldVal: { color: '#94a3b8', textDecoration: 'line-through' },
+  arrow: { color: '#cbd5e1' },
+  newVal: { color: '#0f172a', fontWeight: '700' },
+  logFooter: { marginTop: 'auto', fontSize: '0.8rem', color: '#94a3b8', textAlign: 'right' }
 };
 
 export default AdminDashboard;

@@ -1,31 +1,39 @@
-const OrganAvailability = require('../models/OrganAvailability');
-const UpdateLog = require('../models/UpdateLog');
+const { pool } = require('../config/db');
+
+exports.getMyOrgans = async (req, res) => {
+  try {
+    const hospitalId = req.user.hospitalId;
+    const result = await pool.query(
+      'SELECT organ_type as "organType", status, last_updated as "lastUpdated" FROM organ_availabilities WHERE hospital_id=$1 ORDER BY organ_type',
+      [hospitalId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 exports.searchOrgans = async (req, res) => {
   try {
     const { organ, city } = req.query;
+    const params = [];
+    let where = 'WHERE h.is_approved=true AND h.is_active=true';
 
-    const query = {};
-    if (organ) query.organType = organ;
+    if (organ) { params.push(organ); where += ` AND o.organ_type=$${params.length}`; }
+    if (city)  { params.push(city);  where += ` AND h.city=$${params.length}`; }
 
-    const organs = await OrganAvailability.find(query)
-      .populate({
-        path: 'hospitalId',
-        match: city ? { city, isApproved: true, isActive: true } : { isApproved: true, isActive: true }
-      })
-      .sort({ lastUpdated: -1 });
+    const result = await pool.query(
+      `SELECT h.name as "hospitalName", h.id as "hospitalId", h.address, h.contact_number as "contactNumber",
+              o.organ_type as "organType", o.status, o.last_updated as "lastUpdated"
+       FROM organ_availabilities o JOIN hospitals h ON o.hospital_id=h.id
+       ${where} ORDER BY o.last_updated DESC`,
+      params
+    );
 
-    const results = organs
-      .filter(org => org.hospitalId)
-      .map(org => ({
-        hospitalName: org.hospitalId.name,
-        address: org.hospitalId.address,
-        contactNumber: org.hospitalId.contactNumber,
-        organType: org.organType,
-        status: org.status,
-        lastUpdated: org.lastUpdated,
-        isOutdated: (Date.now() - new Date(org.lastUpdated)) > 24 * 60 * 60 * 1000
-      }));
+    const results = result.rows.map(r => ({
+      ...r,
+      isOutdated: (Date.now() - new Date(r.last_updated)) > 24 * 60 * 60 * 1000
+    }));
 
     res.json(results);
   } catch (error) {
@@ -38,27 +46,25 @@ exports.updateOrgan = async (req, res) => {
     const { organType, status } = req.body;
     const hospitalId = req.user.hospitalId;
 
-    let organ = await OrganAvailability.findOne({ hospitalId, organType });
-    const previousValue = organ ? organ.status : 'Not Available';
+    const existing = await pool.query(
+      'SELECT status FROM organ_availabilities WHERE hospital_id=$1 AND organ_type=$2',
+      [hospitalId, organType]
+    );
+    const previousValue = existing.rows[0]?.status ?? 'Not Available';
 
-    if (organ) {
-      organ.status = status;
-      organ.lastUpdated = Date.now();
-    } else {
-      organ = new OrganAvailability({ hospitalId, organType, status });
-    }
+    await pool.query(
+      `INSERT INTO organ_availabilities (hospital_id, organ_type, status, last_updated)
+       VALUES ($1,$2,$3,NOW())
+       ON CONFLICT (hospital_id, organ_type) DO UPDATE SET status=$3, last_updated=NOW()`,
+      [hospitalId, organType, status]
+    );
 
-    await organ.save();
+    await pool.query(
+      'INSERT INTO update_logs (hospital_id, type, updated_field, previous_value, new_value) VALUES ($1,$2,$3,$4,$5)',
+      [hospitalId, 'Organ', organType, previousValue, status]
+    );
 
-    await new UpdateLog({
-      hospitalId,
-      type: 'Organ',
-      updatedField: organType,
-      previousValue,
-      newValue: status
-    }).save();
-
-    res.json({ message: 'Organ availability updated successfully', organ });
+    res.json({ message: 'Organ availability updated successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

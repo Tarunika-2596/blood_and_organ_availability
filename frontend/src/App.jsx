@@ -8,6 +8,7 @@ import Login from './pages/Login.jsx';
 import UserLogin from './pages/UserLogin.jsx';
 import HospitalDashboard from './pages/HospitalDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import RequestHistory from './pages/RequestHistory.jsx';
 
 function App() {
   return (
@@ -31,6 +32,14 @@ function App() {
             element={
               <PrivateRoute role="admin">
                 <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/request-history"
+            element={
+              <PrivateRoute role="user">
+                <RequestHistory />
               </PrivateRoute>
             }
           />

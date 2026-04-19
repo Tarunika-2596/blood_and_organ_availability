@@ -5,5 +5,6 @@ const { auth } = require('../middleware/auth');
 
 router.post('/create', auth, requestController.createRequest);
 router.get('/my-requests', auth, requestController.getUserRequests);
+router.get('/hospital-requests', auth, requestController.getHospitalRequests);
 
 module.exports = router;
