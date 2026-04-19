@@ -358,7 +358,7 @@ const styles = {
   divider: { borderTop: '1px solid #f1f5f9', margin: '20px 0' },
   card: { padding: '40px' },
   cardHeader: { display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' },
-  iconCircle: { width: '50px', height: '50px', background: '#f8fafc', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', display: 'flex', justifyContent: 'center' },
+  iconCircle: { width: '50px', height: '50px', background: '#f8fafc', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' },
   cardTitle: { fontSize: '1.5rem', fontWeight: '700', margin: 0, color: '#0f172a' },
   cardDesc: { color: '#64748b', fontSize: '0.95rem', marginBottom: '30px' },
   form: { display: 'flex', flexDirection: 'column', gap: '20px' },

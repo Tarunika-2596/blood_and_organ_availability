@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { searchBlood, searchOrgans, createRequest } from '../services/api';
 import { AuthContext } from '../context/AuthContext.jsx';
@@ -6,7 +6,7 @@ import { AuthContext } from '../context/AuthContext.jsx';
 const Search = () => {
   const { type } = useParams();
   const navigate = useNavigate();
-  const { user, token } = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
   const [city, setCity] = useState('');
   const [selection, setSelection] = useState('');
   const [results, setResults] = useState([]);

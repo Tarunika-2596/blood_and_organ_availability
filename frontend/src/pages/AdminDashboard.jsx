@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAdminHospitals, getAdminLogs, approveHospital, disableHospital } from '../services/api';
 import { AuthContext } from '../context/AuthContext.jsx';
@@ -9,14 +9,8 @@ const AdminDashboard = () => {
   const [hospitals, setHospitals] = useState([]);
   const [logs, setLogs] = useState([]);
   const [activeTab, setActiveTab] = useState('hospitals');
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [activeTab]);
-
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = useCallback(async () => {
     try {
       if (activeTab === 'hospitals') {
         const { data } = await getAdminHospitals();
@@ -28,8 +22,11 @@ const AdminDashboard = () => {
     } catch (error) {
       alert('Failed to load data');
     }
-    setLoading(false);
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleApprove = async (id) => {
     try {
