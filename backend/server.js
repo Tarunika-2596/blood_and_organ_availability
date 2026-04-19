@@ -27,16 +27,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-if (require.main === module) {
-  const PORT = process.env.PORT || 5000;
-  initDB().then(() => {
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  }).catch(err => {
-    console.error('Failed to initialize database:', err.message);
-    process.exit(1);
-  });
-} else {
-  initDB().catch(err => console.error('DB init error:', err.message));
-}
+const PORT = process.env.PORT || 5000;
 
-module.exports = app;
+initDB().then(() => {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}).catch(err => {
+  console.error('Failed to initialize database:', err.message);
+  process.exit(1);
+});
