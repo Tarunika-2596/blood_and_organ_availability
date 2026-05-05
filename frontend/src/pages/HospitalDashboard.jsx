@@ -127,7 +127,7 @@ const HospitalDashboard = () => {
       await createRequest({ type: searchType === 'blood' ? 'Blood' : 'Organ', item: searchType === 'blood' ? item.bloodGroup : item.organType, hospitalId: item.hospitalId, message });
       alert('Request sent successfully!');
     } catch (error) { alert('Failed to send request'); }
-  };
+  const handleBloodUpdate = async (bloodGroup) => {
     setLoading(true);
     try { await updateBlood({ bloodGroup, unitsAvailable: Number(editingBlood[bloodGroup]) }); fetchInventory(); }
     catch (error) { alert(error.response?.data?.message || 'Update failed'); }
