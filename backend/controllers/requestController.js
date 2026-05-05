@@ -4,36 +4,14 @@ exports.createRequest = async (req, res) => {
   try {
     const { type, item, hospitalId, message } = req.body;
     const userId = req.user.userId;
-    const requesterName = req.user.name || (req.user.role === 'hospital' ? 'Hospital' : 'User');
 
     const result = await pool.query(
       `INSERT INTO requests (user_id, user_name, type, item, hospital_id, message)
        VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [userId, requesterName, type, item, hospitalId, message]
+      [userId, req.user.name || 'User', type, item, hospitalId, message]
     );
 
     res.json({ message: 'Request submitted successfully', request: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-exports.updateRequestStatus = async (req, res) => {
-  try {
-    const hospitalId = req.user.hospitalId;
-    const { status } = req.body;
-    const { id } = req.params;
-
-    const validStatuses = ['Pending', 'Will Contact', 'Contacted', 'Fulfilled', 'Rejected'];
-    if (!validStatuses.includes(status)) return res.status(400).json({ message: 'Invalid status' });
-
-    const result = await pool.query(
-      'UPDATE requests SET status=$1 WHERE id=$2 AND hospital_id=$3 RETURNING *',
-      [status, id, hospitalId]
-    );
-    if (!result.rows.length) return res.status(404).json({ message: 'Request not found' });
-
-    res.json({ message: 'Status updated', request: result.rows[0] });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
