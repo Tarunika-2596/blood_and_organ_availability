@@ -30,7 +30,16 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 initDB().then(() => {
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use. Please stop the process using that port or set PORT to a different value.`);
+      process.exit(1);
+    }
+    console.error('Server failed to start:', error);
+    process.exit(1);
+  });
 }).catch(err => {
   console.error('Failed to initialize database:', err.message);
   process.exit(1);

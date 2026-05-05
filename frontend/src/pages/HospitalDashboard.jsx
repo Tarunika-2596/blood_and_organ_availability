@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updateBlood, updateOrgan, getHospitalRequests, getMyHospital, updateMyHospital, getMyBloodStock, getMyOrgans } from '../services/api';
+import { updateBlood, updateOrgan, getHospitalRequests, getMyHospital, updateMyHospital, getMyBloodStock, getMyOrgans, updateRequestStatus, getHospitals, createRequest } from '../services/api';
 import { AuthContext } from '../context/AuthContext.jsx';
 
 const HospitalDashboard = () => {
@@ -16,6 +16,12 @@ const HospitalDashboard = () => {
   const [activeTab, setActiveTab] = useState('inventory');
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState({ name: '', address: '', city: '', contactNumber: '' });
+  const [hospitals, setHospitals] = useState([]);
+  const [hospitalReqData, setHospitalReqData] = useState({ type: 'Blood', item: '', hospitalId: '', message: '' });
+
+  const REQUEST_STATUSES = ['Pending', 'Will Contact', 'Contacted', 'Fulfilled', 'Rejected'];
+  const STATUS_COLORS = { 'Pending': '#d97706', 'Will Contact': '#3b82f6', 'Contacted': '#8b5cf6', 'Fulfilled': '#059669', 'Rejected': '#dc2626' };
+  const STATUS_BG = { 'Pending': '#fffbeb', 'Will Contact': '#eff6ff', 'Contacted': '#f5f3ff', 'Fulfilled': '#ecfdf5', 'Rejected': '#fef2f2' };
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const organs = ['Kidney', 'Liver', 'Heart', 'Lungs', 'Pancreas', 'Cornea'];
@@ -24,7 +30,39 @@ const HospitalDashboard = () => {
     if (activeTab === 'inventory') fetchInventory();
     if (activeTab === 'requests') fetchRequests();
     if (activeTab === 'profile') fetchProfile();
+    if (activeTab === 'send-request') fetchHospitals();
   }, [activeTab]);
+
+  const fetchHospitals = async () => {
+    try {
+      const { data } = await getHospitals();
+      setHospitals(data.filter(h => h.isApproved && h.isActive));
+    } catch (error) {
+      console.error('Failed to fetch hospitals');
+    }
+  };
+
+  const handleStatusUpdate = async (reqId, status) => {
+    try {
+      await updateRequestStatus(reqId, status);
+      setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status } : r));
+    } catch (error) {
+      alert('Failed to update status');
+    }
+  };
+
+  const handleHospitalRequest = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await createRequest(hospitalReqData);
+      alert('Request sent to hospital successfully!');
+      setHospitalReqData({ type: 'Blood', item: '', hospitalId: '', message: '' });
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to send request');
+    }
+    setLoading(false);
+  };
 
   const fetchInventory = async () => {
     try {
@@ -163,6 +201,12 @@ const HospitalDashboard = () => {
             style={{...styles.tab, ...(activeTab === 'profile' && styles.activeTab)}}
           >
             ✏️ Edit Profile
+          </button>
+          <button 
+            onClick={() => setActiveTab('send-request')} 
+            style={{...styles.tab, ...(activeTab === 'send-request' && styles.activeTab)}}
+          >
+            🏥 Request from Hospital
           </button>
         </div>
 
@@ -318,10 +362,60 @@ const HospitalDashboard = () => {
                       <strong>Message from patient:</strong>
                       <p>"{req.message}"</p>
                     </div>
+                    <div style={styles.statusRow}>
+                      <span style={{ ...styles.statusBadge, background: STATUS_BG[req.status] || '#f1f5f9', color: STATUS_COLORS[req.status] || '#64748b' }}>{req.status}</span>
+                      <select
+                        value={req.status}
+                        onChange={(e) => handleStatusUpdate(req.id, e.target.value)}
+                        className="input-field"
+                        style={styles.statusSelect}
+                      >
+                        {REQUEST_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        )}
+        {activeTab === 'send-request' && (
+          <div style={styles.grid} className="animate-fade">
+            <div style={styles.card} className="white-card">
+              <div style={styles.cardHeader}>
+                <div style={styles.iconCircle}>🏥</div>
+                <h2 style={styles.cardTitle}>Request from Another Hospital</h2>
+              </div>
+              <p style={styles.cardDesc}>Send a blood or organ request to another hospital in the network.</p>
+              <form onSubmit={handleHospitalRequest} style={styles.form}>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Request Type</label>
+                  <select value={hospitalReqData.type} onChange={(e) => setHospitalReqData({...hospitalReqData, item: '', type: e.target.value})} className="input-field" required>
+                    <option value="Blood">Blood</option>
+                    <option value="Organ">Organ</option>
+                  </select>
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>{hospitalReqData.type === 'Blood' ? 'Blood Group' : 'Organ Type'}</label>
+                  <select value={hospitalReqData.item} onChange={(e) => setHospitalReqData({...hospitalReqData, item: e.target.value})} className="input-field" required>
+                    <option value="">Select...</option>
+                    {(hospitalReqData.type === 'Blood' ? bloodGroups : organs).map(i => <option key={i} value={i}>{i}</option>)}
+                  </select>
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Target Hospital</label>
+                  <select value={hospitalReqData.hospitalId} onChange={(e) => setHospitalReqData({...hospitalReqData, hospitalId: e.target.value})} className="input-field" required>
+                    <option value="">Select Hospital</option>
+                    {hospitals.map(h => <option key={h.id} value={h.id}>{h.name} — {h.city}</option>)}
+                  </select>
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Message</label>
+                  <input type="text" placeholder="Reason for request..." value={hospitalReqData.message} onChange={(e) => setHospitalReqData({...hospitalReqData, message: e.target.value})} className="input-field" required />
+                </div>
+                <button type="submit" className="btn btn-primary" style={styles.submitBtn} disabled={loading}>{loading ? 'Sending...' : 'Send Request'}</button>
+              </form>
+            </div>
           </div>
         )}
       </div>
@@ -378,7 +472,10 @@ const styles = {
   infoLabel: { color: '#94a3b8', fontWeight: '600', minWidth: '70px' },
   infoValue: { color: '#0f172a', fontWeight: '700' },
   infoLink: { color: '#dc2626', fontWeight: '700', textDecoration: 'underline' },
-  reqMessage: { fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' }
+  reqMessage: { fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' },
+  statusRow: { display: 'flex', alignItems: 'center', gap: '12px', marginTop: '5px' },
+  statusBadge: { padding: '4px 12px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '700', whiteSpace: 'nowrap' },
+  statusSelect: { flex: 1, padding: '8px 12px', fontSize: '0.9rem' },
 };
 
 export default HospitalDashboard;
