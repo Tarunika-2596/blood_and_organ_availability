@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updateBlood, updateOrgan, getHospitalRequests, getMyHospital, updateMyHospital, getMyBloodStock, getMyOrgans, updateRequestStatus, getHospitals, createRequest } from '../services/api';
+import { updateBlood, updateOrgan, getHospitalRequests, getMyHospital, updateMyHospital, getMyBloodStock, getMyOrgans, updateRequestStatus, getHospitals, createRequest, searchBlood, searchOrgans } from '../services/api';
 import { AuthContext } from '../context/AuthContext.jsx';
 
 const HospitalDashboard = () => {
@@ -18,6 +18,11 @@ const HospitalDashboard = () => {
   const [profileData, setProfileData] = useState({ name: '', address: '', city: '', contactNumber: '' });
   const [hospitals, setHospitals] = useState([]);
   const [hospitalReqData, setHospitalReqData] = useState({ type: 'Blood', item: '', hospitalId: '', message: '' });
+  const [searchType, setSearchType] = useState('blood');
+  const [searchCity, setSearchCity] = useState('');
+  const [searchSelection, setSearchSelection] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
 
   const REQUEST_STATUSES = ['Pending', 'Will Contact', 'Contacted', 'Fulfilled', 'Rejected'];
   const STATUS_COLORS = { 'Pending': '#d97706', 'Will Contact': '#3b82f6', 'Contacted': '#8b5cf6', 'Fulfilled': '#059669', 'Rejected': '#dc2626' };
@@ -27,6 +32,7 @@ const HospitalDashboard = () => {
 
   const navItems = [
     { key: 'inventory', icon: '📊', label: 'Inventory' },
+    { key: 'search', icon: '🔍', label: 'Search Network' },
     { key: 'requests', icon: '📩', label: 'Patient Requests', badge: requests.length },
     { key: 'send-request', icon: '🏥', label: 'Request Hospital' },
     { key: 'profile', icon: '✏️', label: 'Edit Profile' },
@@ -37,6 +43,7 @@ const HospitalDashboard = () => {
     if (activeTab === 'requests') fetchRequests();
     if (activeTab === 'profile') fetchProfile();
     if (activeTab === 'send-request') fetchHospitals();
+    if (activeTab === 'search') { setSearchResults([]); setSearchSelection(''); setSearchCity(''); }
   }, [activeTab]);
 
   const fetchInventory = async () => {
@@ -102,7 +109,25 @@ const HospitalDashboard = () => {
     setLoading(false);
   };
 
-  const handleBloodUpdate = async (bloodGroup) => {
+  const handleSearch = async () => {
+    if (!searchSelection) return alert(`Please select a ${searchType === 'blood' ? 'blood group' : 'organ'}`);
+    setSearching(true);
+    try {
+      const params = { city: searchCity };
+      if (searchType === 'blood') { params.group = searchSelection; const { data } = await searchBlood(params); setSearchResults(data); }
+      else { params.organ = searchSelection; const { data } = await searchOrgans(params); setSearchResults(data); }
+    } catch (error) { alert('Search failed'); }
+    setSearching(false);
+  };
+
+  const handleSearchRequest = async (item) => {
+    const message = prompt(`Enter reason for requesting ${searchType === 'blood' ? item.bloodGroup : item.organType}:`);
+    if (!message) return;
+    try {
+      await createRequest({ type: searchType === 'blood' ? 'Blood' : 'Organ', item: searchType === 'blood' ? item.bloodGroup : item.organType, hospitalId: item.hospitalId, message });
+      alert('Request sent successfully!');
+    } catch (error) { alert('Failed to send request'); }
+  };
     setLoading(true);
     try { await updateBlood({ bloodGroup, unitsAvailable: Number(editingBlood[bloodGroup]) }); fetchInventory(); }
     catch (error) { alert(error.response?.data?.message || 'Update failed'); }
@@ -137,6 +162,66 @@ const HospitalDashboard = () => {
   const handleLogout = () => { logout(); navigate('/'); };
 
   const renderContent = () => {
+    if (activeTab === 'search') return (
+      <div className="animate-fade">
+        <div style={styles.searchPanel} className="glass-card">
+          <div style={styles.searchRow}>
+            <div style={styles.inputGroup}>
+              <label style={styles.labelLight}>Type</label>
+              <select value={searchType} onChange={(e) => { setSearchType(e.target.value); setSearchSelection(''); setSearchResults([]); }} className="input-field">
+                <option value="blood">Blood</option>
+                <option value="organ">Organ</option>
+              </select>
+            </div>
+            <div style={styles.inputGroup}>
+              <label style={styles.labelLight}>{searchType === 'blood' ? 'Blood Group' : 'Organ Type'}</label>
+              <select value={searchSelection} onChange={(e) => setSearchSelection(e.target.value)} className="input-field">
+                <option value="">Select...</option>
+                {(searchType === 'blood' ? bloodGroups : organs).map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+            </div>
+            <div style={styles.inputGroup}>
+              <label style={styles.labelLight}>City (optional)</label>
+              <input type="text" placeholder="e.g. Chennai" value={searchCity} onChange={(e) => setSearchCity(e.target.value)} className="input-field" />
+            </div>
+            <button onClick={handleSearch} className="btn btn-primary" style={styles.searchBtn} disabled={searching}>
+              {searching ? 'Searching...' : '🔍 Search'}
+            </button>
+          </div>
+        </div>
+
+        {searchResults.length === 0 && !searching && (
+          <div style={styles.emptyState} className="white-card"><p style={{color:'#64748b'}}>Search to see available blood and organs across the network.</p></div>
+        )}
+
+        <div style={styles.resultsGrid}>
+          {searchResults.map((item, idx) => (
+            <div key={idx} style={styles.resultCard} className="white-card">
+              <div style={styles.resultHeader}>
+                <h3 style={styles.resultHospital}>{item.hospitalName}</h3>
+                <span style={item.isOutdated ? styles.outdatedBadge : styles.freshBadge}>{item.isOutdated ? 'Outdated' : 'Fresh'}</span>
+              </div>
+              <p style={styles.resultAddr}>📍 {item.address}</p>
+              <p style={styles.resultContact}>📞 {item.contactNumber}</p>
+              <div style={styles.dataBlock}>
+                <div style={styles.dataItem}>
+                  <span style={styles.dataLabel}>{searchType === 'blood' ? 'Group' : 'Organ'}</span>
+                  <span style={styles.dataValue}>{searchType === 'blood' ? item.bloodGroup : item.organType}</span>
+                </div>
+                <div style={styles.dataItem}>
+                  <span style={styles.dataLabel}>{searchType === 'blood' ? 'Units' : 'Status'}</span>
+                  <span style={{...styles.dataValue, color: item.status === 'Available' || item.unitsAvailable > 0 ? '#10b981' : '#dc2626'}}>
+                    {searchType === 'blood' ? item.unitsAvailable : item.status}
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => handleSearchRequest(item)} className="btn btn-primary" style={{width:'100%'}}>Send Request</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
     if (activeTab === 'inventory') return (
       <div style={styles.contentGrid}>
         <div style={styles.card} className="white-card animate-fade">
@@ -379,6 +464,22 @@ const styles = {
   statusRow: { display: 'flex', alignItems: 'center', gap: '10px' },
   statusBadge: { padding: '4px 12px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '700', whiteSpace: 'nowrap' },
   statusSelect: { flex: 1, padding: '8px 12px', fontSize: '0.9rem' },
+  searchPanel: { padding: '25px 30px', marginBottom: '30px' },
+  searchRow: { display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' },
+  labelLight: { fontSize: '0.85rem', fontWeight: '600', color: 'rgba(255,255,255,0.6)' },
+  searchBtn: { height: '50px', padding: '0 30px', whiteSpace: 'nowrap' },
+  resultsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' },
+  resultCard: { padding: '25px', display: 'flex', flexDirection: 'column', gap: '12px' },
+  resultHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  resultHospital: { fontSize: '1.1rem', fontWeight: '700', color: '#0f172a', margin: 0 },
+  freshBadge: { background: '#ecfdf5', color: '#059669', padding: '3px 10px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '700' },
+  outdatedBadge: { background: '#fef2f2', color: '#dc2626', padding: '3px 10px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: '700' },
+  resultAddr: { color: '#64748b', fontSize: '0.9rem', margin: 0 },
+  resultContact: { color: '#64748b', fontSize: '0.9rem', fontWeight: '600', margin: 0 },
+  dataBlock: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', padding: '15px', background: '#f8fafc', borderRadius: '10px' },
+  dataItem: { display: 'flex', flexDirection: 'column', gap: '4px' },
+  dataLabel: { fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' },
+  dataValue: { fontSize: '1.3rem', fontWeight: '800', color: '#0f172a' },
 };
 
 export default HospitalDashboard;
