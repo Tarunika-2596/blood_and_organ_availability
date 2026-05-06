@@ -61,3 +61,15 @@ exports.disableHospital = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+exports.enableHospital = async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE hospitals SET is_active=true WHERE id=$1 RETURNING *',
+      [req.params.id]
+    );
+    res.json({ message: 'Hospital enabled', hospital: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAdminHospitals, getAdminLogs, approveHospital, disableHospital } from '../services/api';
+import { getAdminHospitals, getAdminLogs, approveHospital, disableHospital, enableHospital } from '../services/api';
 import { AuthContext } from '../context/AuthContext.jsx';
 
 const AdminDashboard = () => {
@@ -42,6 +42,11 @@ const AdminDashboard = () => {
     catch (error) { alert('Failed to disable'); }
   };
 
+  const handleEnable = async (id) => {
+    try { await enableHospital(id); alert('Hospital enabled'); loadData(); }
+    catch (error) { alert('Failed to enable'); }
+  };
+
   const handleLogout = () => { logout(); navigate('/'); };
 
   const renderContent = () => {
@@ -76,6 +81,7 @@ const AdminDashboard = () => {
                   <div style={styles.actionButtons}>
                     {!hospital.isApproved && <button onClick={() => handleApprove(hospital.id)} className="btn btn-primary" style={styles.actionBtn}>Approve</button>}
                     {hospital.isActive && <button onClick={() => handleDisable(hospital.id)} className="btn btn-outline" style={{...styles.actionBtn, color: '#dc2626'}}>Disable</button>}
+                    {!hospital.isActive && <button onClick={() => handleEnable(hospital.id)} className="btn btn-outline" style={{...styles.actionBtn, color: '#059669'}}>Enable</button>}
                   </div>
                 </td>
               </tr>

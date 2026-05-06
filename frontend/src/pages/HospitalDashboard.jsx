@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updateBlood, updateOrgan, getHospitalRequests, getMyHospital, updateMyHospital, getMyBloodStock, getMyOrgans } from '../services/api';
+import { updateBlood, updateOrgan, getHospitalRequests, getMyHospital, updateMyHospital, getMyBloodStock, getMyOrgans, updateRequestStatus } from '../services/api';
 import { AuthContext } from '../context/AuthContext.jsx';
 
 const HospitalDashboard = () => {
@@ -132,6 +132,18 @@ const HospitalDashboard = () => {
     logout();
     navigate('/');
   };
+
+  const handleStatusUpdate = async (reqId, status) => {
+    try {
+      await updateRequestStatus(reqId, status);
+      fetchRequests();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update status');
+    }
+  };
+
+  const STATUS_COLORS = { 'Pending': '#d97706', 'Will Contact': '#3b82f6', 'Contacted': '#8b5cf6', 'Fulfilled': '#059669', 'Rejected': '#dc2626' };
+  const STATUS_BG = { 'Pending': '#fffbeb', 'Will Contact': '#eff6ff', 'Contacted': '#f5f3ff', 'Fulfilled': '#ecfdf5', 'Rejected': '#fef2f2' };
 
   return (
     <div style={styles.wrapper}>
@@ -308,6 +320,21 @@ const HospitalDashboard = () => {
                       <strong>Message from patient:</strong>
                       <p>"{req.message}"</p>
                     </div>
+                    <div style={styles.statusRow}>
+                      <span style={{ ...styles.statusBadge, background: STATUS_BG[req.status] || '#f1f5f9', color: STATUS_COLORS[req.status] || '#64748b' }}>
+                        {req.status || 'Pending'}
+                      </span>
+                      <select
+                        defaultValue=""
+                        onChange={(e) => { if (e.target.value) handleStatusUpdate(req.id, e.target.value); }}
+                        style={styles.statusSelect}
+                      >
+                        <option value="" disabled>Update Status</option>
+                        {['Pending', 'Will Contact', 'Contacted', 'Fulfilled', 'Rejected'].map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -363,7 +390,10 @@ const styles = {
   infoLabel: { color: '#94a3b8', fontWeight: '600', minWidth: '70px' },
   infoValue: { color: '#0f172a', fontWeight: '700' },
   infoLink: { color: '#dc2626', fontWeight: '700', textDecoration: 'underline' },
-  reqMessage: { fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' }
+  reqMessage: { fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' },
+  statusRow: { display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' },
+  statusBadge: { padding: '5px 14px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: '700', whiteSpace: 'nowrap' },
+  statusSelect: { flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.85rem', cursor: 'pointer', background: '#f8fafc', color: '#0f172a' }
 };
 
 export default HospitalDashboard;

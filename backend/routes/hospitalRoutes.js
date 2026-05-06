@@ -8,5 +8,6 @@ router.get('/my-hospital', auth, authorize('hospital'), hospitalController.getMy
 router.put('/my-hospital', auth, authorize('hospital'), hospitalController.updateMyHospital);
 router.put('/:id/approve', auth, authorize('admin'), hospitalController.approveHospital);
 router.put('/:id/disable', auth, authorize('admin'), hospitalController.disableHospital);
+router.put('/:id/enable', auth, authorize('admin'), hospitalController.enableHospital);
 
 module.exports = router;

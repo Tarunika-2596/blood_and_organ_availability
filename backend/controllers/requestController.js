@@ -47,3 +47,22 @@ exports.getHospitalRequests = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+exports.updateRequestStatus = async (req, res) => {
+  try {
+    const hospitalId = req.user.hospitalId;
+    if (!hospitalId) return res.status(403).json({ message: 'Access denied. Hospital only.' });
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowed = ['Pending', 'Will Contact', 'Contacted', 'Fulfilled', 'Rejected'];
+    if (!allowed.includes(status)) return res.status(400).json({ message: 'Invalid status' });
+    const result = await pool.query(
+      'UPDATE requests SET status=$1 WHERE id=$2 AND hospital_id=$3 RETURNING *',
+      [status, id, hospitalId]
+    );
+    if (!result.rows.length) return res.status(404).json({ message: 'Request not found' });
+    res.json({ message: 'Status updated', request: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

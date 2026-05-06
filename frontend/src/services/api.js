@@ -24,6 +24,7 @@ export const getMyHospital = () => API.get('/hospitals/my-hospital');
 export const updateMyHospital = (data) => API.put('/hospitals/my-hospital', data);
 export const approveHospital = (id) => API.put(`/hospitals/${id}/approve`);
 export const disableHospital = (id) => API.put(`/hospitals/${id}/disable`);
+export const enableHospital = (id) => API.put(`/hospitals/${id}/enable`);
 
 export const getAdminHospitals = () => API.get('/admin/hospitals');
 export const getAdminLogs = () => API.get('/admin/logs');
@@ -31,3 +32,4 @@ export const getAdminLogs = () => API.get('/admin/logs');
 export const createRequest = (data) => API.post('/requests/create', data);
 export const getMyRequests = () => API.get('/requests/my-requests');
 export const getHospitalRequests = () => API.get('/requests/hospital-requests');
+export const updateRequestStatus = (id, status) => API.put(`/requests/${id}/status`, { status });

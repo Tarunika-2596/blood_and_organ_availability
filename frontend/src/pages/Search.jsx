@@ -11,6 +11,9 @@ const Search = () => {
   const [selection, setSelection] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState(null);
+  const [modalMsg, setModalMsg] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const organs = ['Kidney', 'Liver', 'Heart', 'Lungs', 'Pancreas', 'Cornea'];
@@ -36,30 +39,52 @@ const Search = () => {
   };
 
   const handleRequest = async (item) => {
-    if (!token) {
-      alert('Please login to request blood or organ');
-      navigate('/user-login');
-      return;
-    }
+    if (!token) { navigate('/user-login'); return; }
+    setModal(item);
+    setModalMsg('');
+  };
 
-    const message = prompt(`Enter your message/reason for requesting ${type === 'blood' ? item.bloodGroup : item.organType}:`);
-    if (!message) return;
-
+  const submitRequest = async () => {
+    if (!modalMsg.trim()) return alert('Please enter a message');
+    setSubmitting(true);
     try {
       await createRequest({
         type: type === 'blood' ? 'Blood' : 'Organ',
-        item: type === 'blood' ? item.bloodGroup : item.organType,
-        hospitalId: item.hospitalId,
-        message
+        item: type === 'blood' ? modal.bloodGroup : modal.organType,
+        hospitalId: modal.hospitalId,
+        message: modalMsg
       });
+      setModal(null);
       alert('Request submitted successfully! Hospital will contact you.');
     } catch (error) {
       alert('Failed to submit request');
     }
+    setSubmitting(false);
   };
 
   return (
     <div style={styles.wrapper}>
+      {modal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalBox} className="white-card">
+            <h3 style={styles.modalTitle}>Request {type === 'blood' ? modal.bloodGroup : modal.organType}</h3>
+            <p style={styles.modalSub}>From <strong>{modal.hospitalName}</strong></p>
+            <textarea
+              placeholder="Describe your need or urgency..."
+              value={modalMsg}
+              onChange={(e) => setModalMsg(e.target.value)}
+              style={styles.modalTextarea}
+              rows={4}
+            />
+            <div style={styles.modalActions}>
+              <button onClick={() => setModal(null)} className="btn btn-outline">Cancel</button>
+              <button onClick={submitRequest} className="btn btn-primary" disabled={submitting}>
+                {submitting ? 'Submitting...' : 'Submit Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={styles.container}>
         <div style={styles.navbar} className="animate-fade">
           <Link to="/" style={styles.backLink}>← Back to Home</Link>
@@ -208,7 +233,13 @@ const styles = {
   emptyState: { gridColumn: '1/-1', textAlign: 'center', padding: '80px 20px' },
   emptyIcon: { fontSize: '4rem', marginBottom: '20px' },
   emptyTitle: { fontSize: '1.8rem', fontWeight: '700', color: '#fff', marginBottom: '10px' },
-  emptyText: { color: '#94a3b8', fontSize: '1.1rem' }
+  emptyText: { color: '#94a3b8', fontSize: '1.1rem' },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+  modalBox: { width: '100%', maxWidth: '480px', padding: '40px', margin: '20px' },
+  modalTitle: { fontSize: '1.6rem', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' },
+  modalSub: { color: '#64748b', marginBottom: '24px' },
+  modalTextarea: { width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.95rem', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' },
+  modalActions: { display: 'flex', gap: '12px', marginTop: '20px', justifyContent: 'flex-end' }
 };
 
 export default Search;
