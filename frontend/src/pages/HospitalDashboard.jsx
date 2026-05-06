@@ -15,7 +15,7 @@ const HospitalDashboard = () => {
   const [requests, setRequests] = useState([]);
   const [activeTab, setActiveTab] = useState('inventory');
   const [loading, setLoading] = useState(false);
-  const [profileData, setProfileData] = useState({ name: '', address: '', city: '', contactNumber: '' });
+  const [profileData, setProfileData] = useState({ name: '', address: '', city: '', contactNumber: '', email: '' });
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const organs = ['Kidney', 'Liver', 'Heart', 'Lungs', 'Pancreas', 'Cornea'];
@@ -46,7 +46,7 @@ const HospitalDashboard = () => {
     setLoading(true);
     try {
       const { data } = await getMyHospital();
-      setProfileData({ name: data.name, address: data.address, city: data.city, contactNumber: data.contactNumber });
+      setProfileData({ name: data.name, address: data.address, city: data.city, contactNumber: data.contactNumber, email: data.email || '' });
     } catch (error) {
       console.error('Failed to fetch hospital profile');
     }
@@ -284,6 +284,10 @@ const HospitalDashboard = () => {
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Contact Number</label>
                   <input type="text" value={profileData.contactNumber} onChange={(e) => setProfileData({...profileData, contactNumber: e.target.value})} className="input-field" required />
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Hospital Email</label>
+                  <input type="email" value={profileData.email} onChange={(e) => setProfileData({...profileData, email: e.target.value})} className="input-field" placeholder="contact@hospital.com" required />
                 </div>
                 <button type="submit" className="btn btn-primary" style={styles.submitBtn} disabled={loading}>
                   {loading ? 'Saving...' : 'Save Changes'}

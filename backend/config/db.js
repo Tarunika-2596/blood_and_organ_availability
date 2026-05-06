@@ -16,10 +16,13 @@ const initDB = async () => {
       address VARCHAR(255) NOT NULL,
       city VARCHAR(100) NOT NULL,
       contact_number VARCHAR(50) NOT NULL,
+      email VARCHAR(255),
       is_approved BOOLEAN DEFAULT false,
       is_active BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT NOW()
     );
+
+    ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS email VARCHAR(255);
 
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,

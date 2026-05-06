@@ -12,8 +12,8 @@ exports.register = async (req, res) => {
     let hospitalId = null;
     if (role === 'hospital' && hospitalData) {
       const h = await pool.query(
-        'INSERT INTO hospitals (name, address, city, contact_number) VALUES ($1,$2,$3,$4) RETURNING id',
-        [hospitalData.name, hospitalData.address, hospitalData.city, hospitalData.contactNumber]
+        'INSERT INTO hospitals (name, address, city, contact_number, email) VALUES ($1,$2,$3,$4,$5) RETURNING id',
+        [hospitalData.name, hospitalData.address, hospitalData.city, hospitalData.contactNumber, hospitalData.email]
       );
       hospitalId = h.rows[0].id;
     }

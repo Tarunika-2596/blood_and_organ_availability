@@ -151,7 +151,10 @@ const Search = () => {
               
               <div style={styles.hospitalInfo}>
                 <p style={styles.address}>📍 {item.address}</p>
-                <p style={styles.contact}>📞 {item.contactNumber}</p>
+                <a href={`tel:${item.contactNumber}`} style={styles.contactLink}>📞 {item.contactNumber}</a>
+                {item.hospitalEmail && (
+                  <a href={`mailto:${item.hospitalEmail}`} style={styles.contactLink}>✉️ {item.hospitalEmail}</a>
+                )}
               </div>
 
               <div style={styles.dataBlock}>
@@ -214,8 +217,8 @@ const styles = {
   activeBadge: { background: '#ecfdf5', color: '#059669', padding: '4px 12px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: '700' },
   outdatedBadge: { background: '#fef2f2', color: '#dc2626', padding: '4px 12px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: '700' },
   hospitalInfo: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  address: { color: '#64748b', fontSize: '0.95rem' },
-  contact: { color: '#64748b', fontSize: '0.95rem', fontWeight: '600' },
+  address: { color: '#64748b', fontSize: '0.95rem', margin: 0 },
+  contactLink: { color: '#dc2626', fontSize: '0.95rem', fontWeight: '600', textDecoration: 'none', display: 'block' },
   dataBlock: { 
     display: 'grid', 
     gridTemplateColumns: '1fr 1fr', 

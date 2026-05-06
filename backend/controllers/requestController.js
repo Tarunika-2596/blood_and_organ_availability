@@ -48,6 +48,21 @@ exports.getHospitalRequests = async (req, res) => {
   }
 };
 
+exports.cancelRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const result = await pool.query(
+      `UPDATE requests SET status='Cancelled' WHERE id=$1 AND user_id=$2 AND status='Pending' RETURNING *`,
+      [id, userId]
+    );
+    if (!result.rows.length) return res.status(400).json({ message: 'Cannot cancel this request' });
+    res.json({ message: 'Request cancelled' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 exports.updateRequestStatus = async (req, res) => {
   try {
     const hospitalId = req.user.hospitalId;

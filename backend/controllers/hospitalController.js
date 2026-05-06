@@ -5,7 +5,7 @@ exports.getMyHospital = async (req, res) => {
     const hospitalId = req.user.hospitalId;
     if (!hospitalId) return res.status(403).json({ message: 'Access denied. Hospital only.' });
     const result = await pool.query(
-      'SELECT id, name, address, city, contact_number as "contactNumber" FROM hospitals WHERE id=$1',
+      'SELECT id, name, address, city, contact_number as "contactNumber", email FROM hospitals WHERE id=$1',
       [hospitalId]
     );
     res.json(result.rows[0]);
@@ -18,10 +18,11 @@ exports.updateMyHospital = async (req, res) => {
   try {
     const hospitalId = req.user.hospitalId;
     if (!hospitalId) return res.status(403).json({ message: 'Access denied. Hospital only.' });
-    const { name, address, city, contactNumber } = req.body;
+    const { name, address, city, contactNumber, email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Hospital email is required' });
     const result = await pool.query(
-      'UPDATE hospitals SET name=$1, address=$2, city=$3, contact_number=$4 WHERE id=$5 RETURNING id, name, address, city, contact_number as "contactNumber"',
-      [name, address, city, contactNumber, hospitalId]
+      'UPDATE hospitals SET name=$1, address=$2, city=$3, contact_number=$4, email=$5 WHERE id=$6 RETURNING id, name, address, city, contact_number as "contactNumber", email',
+      [name, address, city, contactNumber, email, hospitalId]
     );
     res.json({ message: 'Hospital details updated successfully', hospital: result.rows[0] });
   } catch (error) {
@@ -31,7 +32,7 @@ exports.updateMyHospital = async (req, res) => {
 
 exports.getAllHospitals = async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, address, city, contact_number as "contactNumber", is_approved as "isApproved", is_active as "isActive", created_at as "createdAt" FROM hospitals ORDER BY created_at DESC');
+    const result = await pool.query('SELECT id, name, address, city, contact_number as "contactNumber", email, is_approved as "isApproved", is_active as "isActive", created_at as "createdAt" FROM hospitals ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

@@ -14,6 +14,7 @@ const Login = () => {
     email: '',
     password: '',
     hospitalName: '',
+    hospitalEmail: '',
     address: '',
     city: '',
     contactNumber: ''
@@ -35,7 +36,8 @@ const Login = () => {
             name: formData.hospitalName,
             address: formData.address,
             city: formData.city,
-            contactNumber: formData.contactNumber
+            contactNumber: formData.contactNumber,
+            email: formData.hospitalEmail
           };
         }
         await register(payload);
@@ -128,6 +130,17 @@ const Login = () => {
                       required
                     />
                   </div>
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Hospital Email</label>
+                  <input
+                    type="email"
+                    placeholder="contact@hospital.com"
+                    value={formData.hospitalEmail}
+                    onChange={(e) => setFormData({...formData, hospitalEmail: e.target.value})}
+                    className="input-field"
+                    required
+                  />
                 </div>
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>City</label>

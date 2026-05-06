@@ -23,7 +23,7 @@ exports.searchOrgans = async (req, res) => {
     if (city)  { params.push(city);  where += ` AND h.city=$${params.length}`; }
 
     const result = await pool.query(
-      `SELECT h.name as "hospitalName", h.id as "hospitalId", h.address, h.contact_number as "contactNumber",
+      `SELECT h.name as "hospitalName", h.id as "hospitalId", h.address, h.contact_number as "contactNumber", h.email as "hospitalEmail",
               o.organ_type as "organType", o.status, o.last_updated as "lastUpdated"
        FROM organ_availabilities o JOIN hospitals h ON o.hospital_id=h.id
        ${where} ORDER BY o.last_updated DESC`,

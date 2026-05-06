@@ -23,7 +23,7 @@ exports.searchBlood = async (req, res) => {
     if (city)  { params.push(city);  where += ` AND h.city=$${params.length}`; }
 
     const result = await pool.query(
-      `SELECT h.name as "hospitalName", h.id as "hospitalId", h.address, h.contact_number as "contactNumber", 
+      `SELECT h.name as "hospitalName", h.id as "hospitalId", h.address, h.contact_number as "contactNumber", h.email as "hospitalEmail",
               b.blood_group as "bloodGroup", b.units_available as "unitsAvailable", b.last_updated as "lastUpdated"
        FROM blood_stocks b JOIN hospitals h ON b.hospital_id=h.id
        ${where} ORDER BY b.last_updated DESC`,
