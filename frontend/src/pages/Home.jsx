@@ -8,8 +8,9 @@ const Home = () => {
         <section style={styles.heroSection} className="animate-fade">
           <div style={styles.badge}>Live Availability Tracking</div>
           <h1 style={styles.heroTitle}>
-            Sharing Life Through <span style={styles.highlight}>Technology</span>
+            <span style={styles.highlight}>LifeLink</span>
           </h1>
+          <h2 style={styles.heroSubheading}>Sharing Life Through Technology</h2>
           <p style={styles.heroSubtitle}>
             A centralized platform connecting patients with life-saving blood and organ resources across hospitals in real-time.
           </p>
@@ -62,7 +63,7 @@ const Home = () => {
         </div>
 
         <footer style={styles.footer}>
-          <p>© 2026 Blood & Organ Availability System. All rights reserved.</p>
+          <p>© 2026 LifeLink. All rights reserved.</p>
         </footer>
       </div>
     </div>
@@ -103,8 +104,15 @@ const styles = {
     fontSize: '4.5rem',
     fontWeight: '800',
     lineHeight: '1.1',
-    marginBottom: '24px',
+    marginBottom: '8px',
     letterSpacing: '-2px',
+  },
+  heroSubheading: {
+    fontSize: '1.8rem',
+    fontWeight: '400',
+    color: '#94a3b8',
+    marginBottom: '24px',
+    letterSpacing: '-0.5px',
   },
   highlight: {
     color: '#dc2626',
